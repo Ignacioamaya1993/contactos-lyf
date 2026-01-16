@@ -11,7 +11,15 @@ import {
 // Referencia a la colección
 const contactosRef = collection(db, "contactos");
 
-// 🔐 Protección de la página
+function formatearFecha(timestamp) {
+  if (!timestamp) return "-";
+
+  const date = timestamp.toDate();
+  return date.toLocaleDateString("es-AR");
+}
+
+
+// Protección de la página
 authObserver(user => {
   if (!user) {
     window.location.href = "/pages/login.html";
@@ -23,15 +31,15 @@ authObserver(user => {
   }
 });
 
-// 🚪 Logout
+// Logout
 document.getElementById("logoutBtn").onclick = () => {
   logout();
 };
 
-// 📥 Leer contactos
+// Leer contactos
 async function cargarContactos() {
-  const lista = document.getElementById("contactosList");
-  lista.innerHTML = "Cargando contactos...";
+  const tbody = document.getElementById("contactosBody");
+  tbody.innerHTML = "";
 
   try {
     const q = query(
@@ -42,30 +50,36 @@ async function cargarContactos() {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      lista.innerHTML = "<p>No hay contactos cargados</p>";
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">No hay contactos cargados</td>
+        </tr>
+      `;
       return;
     }
-
-    lista.innerHTML = "";
 
     snapshot.forEach(doc => {
       const c = doc.data();
 
-      const item = document.createElement("div");
-      item.className = "contacto";
+      const tr = document.createElement("tr");
 
-      item.innerHTML = `
-        <strong>${c.nombreCompleto}</strong><br>
-        Tel: ${c.telefono || "-"}<br>
-        Afiliado: ${c.afiliado || "-"}
+      tr.innerHTML = `
+        <td>
+          <input type="checkbox" data-id="${doc.id}">
+        </td>
+        <td>${c.nombreCompleto}</td>
+        <td>${formatearFecha(c.fechaNacimiento)}</td>
+        <td>${c.edad ?? "-"}</td>
+        <td>${c.grupoFamiliarId || "-"}</td>
+        <td>${c.telefono || "-"}</td>
+        <td>${c.activo ? "Sí" : "No"}</td>
       `;
 
-      lista.appendChild(item);
+      tbody.appendChild(tr);
     });
 
   } catch (error) {
-    console.error(error);
-    lista.innerHTML = "Error al cargar contactos";
+    console.error("Error cargando contactos:", error);
   }
 }
 
