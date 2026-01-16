@@ -4,24 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Contactos – Contactos y Afiliados Luz y Fuerza Olavarria</title>
+  <title>Contactos – Contactos y Afiliados Luz y Fuerza Olavarría</title>
 
-  <!-- CSS (después lo creamos) -->
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Contactos</h1>
+<header>
+  <h1>Contactos</h1>
 
-    <div class="user-bar">
-      <span id="status"></span>
-      <button id="logoutBtn">Cerrar sesión</button>
-    </div>
-  </header>
+  <div class="user-bar">
+    <span id="status"></span>
+    <button id="logoutBtn">Cerrar sesión</button>
+  </div>
+</header>
 
 <main>
 
+  <!-- FORMULARIO ALTA / EDICIÓN -->
+  <section>
+    <h2>Agregar / Editar contacto</h2>
+
+    <form id="contactoForm">
+      <input type="text" name="nombre" placeholder="Nombre" required>
+      <input type="text" name="apellido" placeholder="Apellido" required>
+      <input type="text" name="telefono" placeholder="Teléfono" required>
+      <input type="text" name="afiliado" placeholder="N° Afiliado">
+      <input type="date" name="fechaNacimiento">
+      <input type="text" name="grupoFamiliarId" placeholder="Grupo Familiar">
+
+      <button type="submit">Guardar</button>
+    </form>
+  </section>
+
+  <!-- TABLA -->
   <table id="tablaContactos">
     <thead>
       <tr>
@@ -32,18 +48,21 @@
         <th>Grupo Familiar</th>
         <th>Teléfono</th>
         <th>Activo</th>
+        <th>Acciones</th>
       </tr>
     </thead>
 
-    <tbody id="contactosBody">
-      <!-- filas dinámicas -->
-    </tbody>
+    <tbody id="contactosBody"></tbody>
   </table>
+
+  <!-- PAGINACIÓN -->
+  <div style="margin-top: 1rem;">
+    <button id="btnCargarMas">Cargar más</button>
+  </div>
 
 </main>
 
-  <!-- JS -->
-  <script type="module" src="../scripts/contactos.js"></script>
+<script type="module" src="../scripts/contactos.js"></script>
 
 </body>
 </html>
