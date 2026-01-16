@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contactos LyF</title>
+</head>
+<body>
+
+  <h1>Prueba Firebase</h1>
+
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button id="loginBtn">Login</button>
+  <button id="logoutBtn">Logout</button>
+
+  <pre id="status"></pre>
+
+  <script type="module">
+    import { login, logout, authObserver } from "./scripts/auth.js";
+
+    const status = document.getElementById("status");
+
+    authObserver(user => {
+      if (user) {
+        status.textContent = `Logueado como: ${user.email}`;
+      } else {
+        status.textContent = "No logueado";
+      }
+    });
+
+    document.getElementById("loginBtn").onclick = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await login(email, password);
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    document.getElementById("logoutBtn").onclick = () => {
+      logout();
+    };
+  </script>
+
+</body>
+</html>
