@@ -374,12 +374,7 @@ document.getElementById("btnExportExcel")
 /* =====================
    IMPORT CSV / EXCEL
 ===================== */
-document.getElementById("btnImport")
-  ?.addEventListener("click", () =>
-    document.getElementById("inputImport").click()
-  );
-
-document.getElementById("inputImport")
+document.getElementById("importFileInput")
   ?.addEventListener("change", manejarImportacion);
 
 async function manejarImportacion(e) {
