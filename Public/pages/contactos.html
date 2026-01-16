@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Contactos – Contactos LyF</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Contactos – Contactos y Afiliados Luz y Fuerza Olavarria</title>
+
+  <!-- CSS (después lo creamos) -->
+  <link rel="stylesheet" href="../styles/main.css" />
 </head>
 <body>
 
-  <h1>Contactos</h1>
-  <button id="logoutBtn">Cerrar sesión</button>
+  <header>
+    <h1>Contactos</h1>
 
-  <p id="status"></p>
+    <div class="user-bar">
+      <span id="status"></span>
+      <button id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </header>
 
-  <script type="module">
-    import { authObserver, logout } from "../scripts/auth.js";
+<main>
+  <div id="contactosList"></div>
+</main>
 
-    authObserver(user => {
-      if (!user) {
-        window.location.href = "/pages/login.html";
-      } else {
-        document.getElementById("status").textContent =
-          `Bienvenido ${user.email}`;
-      }
-    });
-
-    document.getElementById("logoutBtn").onclick = () => {
-      logout();
-    };
-  </script>
+  <!-- JS -->
+  <script type="module" src="../scripts/contactos.js"></script>
 
 </body>
 </html>
