@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login – Contactos LyF</title>
+</head>
+<body>
+
+  <h2>Iniciar sesión</h2>
+
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Contraseña">
+
+  <button id="loginBtn">Ingresar</button>
+
+  <p id="error" style="color:red"></p>
+
+  <script type="module">
+    import { login, authObserver } from "../scripts/auth.js";
+
+    authObserver(user => {
+      if (user) {
+        window.location.href = "/pages/contactos.html";
+      }
+    });
+
+    document.getElementById("loginBtn").onclick = async () => {
+      const email = email.value;
+      const password = password.value;
+      try {
+        await login(email, password);
+      } catch (e) {
+        document.getElementById("error").textContent = e.message;
+      }
+    };
+  </script>
+
+</body>
+</html>

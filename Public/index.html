@@ -6,42 +6,18 @@
 </head>
 <body>
 
-  <h1>Prueba Firebase</h1>
-
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Password">
-
-  <button id="loginBtn">Login</button>
-  <button id="logoutBtn">Logout</button>
-
-  <pre id="status"></pre>
+  <p>Verificando sesión...</p>
 
   <script type="module">
-    import { login, logout, authObserver } from "./scripts/auth.js";
-
-    const status = document.getElementById("status");
+    import { authObserver } from "./scripts/auth.js";
 
     authObserver(user => {
       if (user) {
-        status.textContent = `Logueado como: ${user.email}`;
+        window.location.href = "/pages/contactos.html";
       } else {
-        status.textContent = "No logueado";
+        window.location.href = "/pages/login.html";
       }
     });
-
-    document.getElementById("loginBtn").onclick = async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      try {
-        await login(email, password);
-      } catch (e) {
-        alert(e.message);
-      }
-    };
-
-    document.getElementById("logoutBtn").onclick = () => {
-      logout();
-    };
   </script>
 
 </body>

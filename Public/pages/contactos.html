@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contactos – Contactos LyF</title>
+</head>
+<body>
+
+  <h1>Contactos</h1>
+  <button id="logoutBtn">Cerrar sesión</button>
+
+  <p id="status"></p>
+
+  <script type="module">
+    import { authObserver, logout } from "../scripts/auth.js";
+
+    authObserver(user => {
+      if (!user) {
+        window.location.href = "/pages/login.html";
+      } else {
+        document.getElementById("status").textContent =
+          `Bienvenido ${user.email}`;
+      }
+    });
+
+    document.getElementById("logoutBtn").onclick = () => {
+      logout();
+    };
+  </script>
+
+</body>
+</html>
