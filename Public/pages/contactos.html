@@ -8,7 +8,6 @@
 
   <link rel="stylesheet" href="../styles/main.css" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 </head>
 <body>
 
@@ -23,33 +22,50 @@
 
 <main>
 
+  <!-- FILTROS -->
   <section class="filters">
 
-  <input
-    type="text"
-    id="searchInput"
-    placeholder="Buscar por nombre, teléfono, afiliado o Grupo Familiar"
-  />
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Buscar por nombre, teléfono, afiliado o Grupo Familiar"
+    />
 
-  <select id="orderSelect">
-    <option value="apellido_asc">Apellido A–Z</option>
-    <option value="apellido_desc">Apellido Z–A</option>
-    <option value="afiliado_asc">Afiliado A–Z</option>
-    <option value="afiliado_desc">Afiliado Z–A</option>
-    <option value="grupoFamiliarId_asc">Grupo Familiar A–Z</option>
-    <option value="grupoFamiliarId_desc">Grupo Familiar Z–A</option>
-  </select>
+    <select id="orderSelect">
+      <option value="apellido_asc">Apellido A–Z</option>
+      <option value="apellido_desc">Apellido Z–A</option>
+      <option value="afiliado_asc">Afiliado A–Z</option>
+      <option value="afiliado_desc">Afiliado Z–A</option>
+      <option value="grupoFamiliarId_asc">Grupo Familiar A–Z</option>
+      <option value="grupoFamiliarId_desc">Grupo Familiar Z–A</option>
+    </select>
 
-  <select id="pageSizeSelect">
-    <option value="10">10</option>
-    <option value="25">25</option>
-    <option value="50" selected>50</option>
-    <option value="100">100</option>
-  </select>
+    <select id="pageSizeSelect">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50" selected>50</option>
+      <option value="100">100</option>
+    </select>
 
-</section>
+  </section>
 
-  <!-- FORMULARIO ALTA / EDICIÓN -->
+  <!-- IMPORTAR / EXPORTAR -->
+  <section class="import-export" style="margin: 1rem 0;">
+    <button id="btnExportCSV">📤 Exportar CSV</button>
+    <button id="btnExportExcel">📤 Exportar Excel</button>
+
+    <label style="margin-left: 1rem;">
+      📥 Importar CSV / Excel
+      <input
+        type="file"
+        id="importFileInput"
+        accept=".csv, .xlsx"
+        style="display: none;"
+      />
+    </label>
+  </section>
+
+  <!-- FORMULARIO -->
   <section>
     <h2>Agregar / Editar contacto</h2>
 
