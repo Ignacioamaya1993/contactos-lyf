@@ -5,6 +5,8 @@ import {
   collection,
   getDocs,
   addDoc,
+  getDoc,
+  deleteDoc,
   updateDoc,
   doc,
   query,
@@ -19,9 +21,15 @@ import {
    CONFIGURACIÓN
 ===================== */
 const contactosRef = collection(db, "contactos");
+
 let ultimoDoc = null;
-let pageSize = 20;
+let pageSize = 50;
 let editandoId = null;
+
+let contactosCache = [];
+let searchText = "";
+let orderField = "apellido";
+let orderDirection = "asc";
 
 /* =====================
    HELPERS
@@ -50,11 +58,11 @@ authObserver(user => {
   } else {
     document.getElementById("status").textContent =
       `Bienvenido ${user.email}`;
-    cargarContactos();
+    cargarContactos(true);
   }
 });
 
-document.getElementById("logoutBtn").onclick = logout;
+document.getElementById("logoutBtn")?.addEventListener("click", logout);
 
 /* =====================
    CARGA DE CONTACTOS
@@ -65,19 +73,20 @@ export async function cargarContactos(reset = true) {
   if (reset) {
     tbody.innerHTML = "";
     ultimoDoc = null;
+    contactosCache = [];
   }
 
   try {
     let q = query(
       contactosRef,
-      orderBy("apellido"),
+      orderBy(orderField, orderDirection),
       limit(pageSize)
     );
 
     if (ultimoDoc) {
       q = query(
         contactosRef,
-        orderBy("apellido"),
+        orderBy(orderField, orderDirection),
         startAfter(ultimoDoc),
         limit(pageSize)
       );
@@ -86,54 +95,109 @@ export async function cargarContactos(reset = true) {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty && reset) {
-      tbody.innerHTML = `
-        <tr><td colspan="8">No hay contactos</td></tr>
-      `;
+      tbody.innerHTML =
+        `<tr><td colspan="8">No hay contactos</td></tr>`;
       return;
     }
 
     snapshot.forEach(d => {
-      const c = d.data();
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td><input type="checkbox" data-id="${d.id}"></td>
-        <td>${c.nombreCompleto}</td>
-        <td>${formatearFecha(c.fechaNacimiento)}</td>
-        <td>${calcularEdad(c.fechaNacimiento)}</td>
-        <td>${c.grupoFamiliarId || "-"}</td>
-        <td>${c.telefono || "-"}</td>
-        <td>${c.activo ? "Sí" : "No"}</td>
-        <td>
-          <button data-edit="${d.id}">✏️</button>
-          <button data-delete="${d.id}">🗑️</button>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
+      contactosCache.push({
+        id: d.id,
+        ...d.data()
+      });
     });
 
     ultimoDoc = snapshot.docs[snapshot.docs.length - 1];
 
-    agregarEventosFila();
+    renderTabla();
 
   } catch (err) {
-    console.error("Error cargando contactos", err);
+    console.error(err);
+    Swal.fire("Error", "No se pudieron cargar los contactos", "error");
   }
 }
 
 /* =====================
-   EVENTOS EDITAR / ELIMINAR
+   RENDER TABLA
+===================== */
+function renderTabla() {
+  const tbody = document.getElementById("contactosBody");
+  tbody.innerHTML = "";
+
+  const filtrados = contactosCache.filter(c => {
+    const t = searchText.toLowerCase();
+    return (
+      c.nombreCompleto?.toLowerCase().includes(t) ||
+      c.telefono?.toString().includes(t) ||
+      c.afiliado?.toString().includes(t)
+    );
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML =
+      `<tr><td colspan="8">Sin resultados</td></tr>`;
+    return;
+  }
+
+  filtrados.forEach(c => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td><input type="checkbox" data-id="${c.id}"></td>
+      <td>${c.nombreCompleto}</td>
+      <td>${formatearFecha(c.fechaNacimiento)}</td>
+      <td>${calcularEdad(c.fechaNacimiento)}</td>
+      <td>${c.grupoFamiliarId || "-"}</td>
+      <td>${c.telefono || "-"}</td>
+      <td>
+        <button data-edit="${c.id}">✏️</button>
+        <button data-delete="${c.id}">🗑️</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  agregarEventosFila();
+}
+
+/* =====================
+   EVENTOS FILA
 ===================== */
 function agregarEventosFila() {
   document.querySelectorAll("[data-edit]").forEach(btn => {
-    btn.onclick = () => cargarContactoParaEdicion(btn.dataset.edit);
+    btn.onclick = () =>
+      cargarContactoParaEdicion(btn.dataset.edit);
   });
 
   document.querySelectorAll("[data-delete]").forEach(btn => {
-    btn.onclick = () => eliminarContacto(btn.dataset.delete);
+    btn.onclick = () =>
+      eliminarContacto(btn.dataset.delete);
   });
 }
+
+/* =====================
+   BUSCADOR / FILTROS
+===================== */
+document.getElementById("searchInput")
+  ?.addEventListener("input", e => {
+    searchText = e.target.value;
+    renderTabla();
+  });
+
+document.getElementById("orderSelect")
+  ?.addEventListener("change", e => {
+    const [field, dir] = e.target.value.split("_");
+    orderField = field;
+    orderDirection = dir;
+    cargarContactos(true);
+  });
+
+document.getElementById("pageSizeSelect")
+  ?.addEventListener("change", e => {
+    pageSize = Number(e.target.value);
+    cargarContactos(true);
+  });
 
 /* =====================
    ALTA / EDICIÓN
@@ -146,28 +210,33 @@ export async function guardarContacto(data) {
     telefono: data.telefono,
     afiliado: data.afiliado || null,
     grupoFamiliarId: data.grupoFamiliarId || null,
-    activo: true,
     updatedAt: serverTimestamp()
   };
 
   if (data.fechaNacimiento) {
-    payload.fechaNacimiento = Timestamp.fromDate(data.fechaNacimiento);
+    payload.fechaNacimiento =
+      Timestamp.fromDate(data.fechaNacimiento);
   }
 
   try {
     if (editandoId) {
       await updateDoc(doc(db, "contactos", editandoId), payload);
       editandoId = null;
+
+      Swal.fire("Actualizado", "Contacto modificado correctamente", "success");
     } else {
       payload.createdAt = serverTimestamp();
       await addDoc(contactosRef, payload);
+
+      Swal.fire("Guardado", "Contacto agregado correctamente", "success");
     }
 
     cargarContactos(true);
     limpiarFormulario();
 
   } catch (err) {
-    console.error("Error guardando contacto", err);
+    console.error(err);
+    Swal.fire("Error", "No se pudo guardar el contacto", "error");
   }
 }
 
@@ -189,41 +258,47 @@ async function cargarContactoParaEdicion(id) {
   form.grupoFamiliarId.value = c.grupoFamiliarId || "";
 
   if (c.fechaNacimiento) {
-    const fecha = c.fechaNacimiento.toDate()
-      .toISOString()
-      .split("T")[0];
-    form.fechaNacimiento.value = fecha;
+    form.fechaNacimiento.value =
+      c.fechaNacimiento.toDate().toISOString().split("T")[0];
   }
 }
 
 /* =====================
-   ELIMINACIÓN LÓGICA
+   ELIMINACIÓN DEFINITIVA
 ===================== */
 async function eliminarContacto(id) {
-  if (!confirm("¿Desactivar este contacto?")) return;
-
-  await updateDoc(doc(db, "contactos", id), {
-    activo: false,
-    updatedAt: serverTimestamp()
+  const result = await Swal.fire({
+    title: "¿Eliminar contacto?",
+    text: "Esta acción es permanente y no se puede deshacer",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar"
   });
 
-  cargarContactos(true);
+  if (!result.isConfirmed) return;
+
+  try {
+    await deleteDoc(doc(db, "contactos", id));
+    Swal.fire("Eliminado", "Contacto eliminado correctamente", "success");
+    cargarContactos(true);
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "No se pudo eliminar el contacto", "error");
+  }
 }
 
 /* =====================
    FORM
 ===================== */
 function limpiarFormulario() {
-  document.querySelector("#contactoForm")?.reset();
+  document.getElementById("contactoForm")?.reset();
 }
 
-// =====================
-// SUBMIT DEL FORMULARIO
-// =====================
 const form = document.getElementById("contactoForm");
 
 if (form) {
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async e => {
     e.preventDefault();
 
     const data = {
@@ -238,7 +313,7 @@ if (form) {
     };
 
     if (!data.nombre || !data.apellido || !data.telefono) {
-      alert("Nombre, apellido y teléfono son obligatorios");
+      Swal.fire("Datos incompletos", "Nombre, apellido y teléfono son obligatorios", "warning");
       return;
     }
 
@@ -249,7 +324,7 @@ if (form) {
 /* =====================
    PAGINACIÓN
 ===================== */
-document.getElementById("btnCargarMas")?.addEventListener("click", () => {
-  cargarContactos(false);
-});
-
+document.getElementById("btnCargarMas")
+  ?.addEventListener("click", () => {
+    cargarContactos(false);
+  });

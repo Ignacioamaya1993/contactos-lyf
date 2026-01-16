@@ -7,6 +7,8 @@
   <title>Contactos – Contactos y Afiliados Luz y Fuerza Olavarría</title>
 
   <link rel="stylesheet" href="../styles/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 <body>
 
@@ -20,6 +22,30 @@
 </header>
 
 <main>
+
+  <section class="filters">
+
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Buscar por nombre, teléfono o afiliado"
+  />
+
+  <select id="orderSelect">
+    <option value="apellido_asc">Apellido A–Z</option>
+    <option value="apellido_desc">Apellido Z–A</option>
+    <option value="afiliado_asc">Afiliado A–Z</option>
+    <option value="afiliado_desc">Afiliado Z–A</option>
+  </select>
+
+  <select id="pageSizeSelect">
+    <option value="10">10</option>
+    <option value="25">25</option>
+    <option value="50" selected>50</option>
+    <option value="100">100</option>
+  </select>
+
+</section>
 
   <!-- FORMULARIO ALTA / EDICIÓN -->
   <section>
@@ -47,7 +73,7 @@
         <th>Edad</th>
         <th>Grupo Familiar</th>
         <th>Teléfono</th>
-        <th>Activo</th>
+        <th>Afiliado</th>
         <th>Acciones</th>
       </tr>
     </thead>
