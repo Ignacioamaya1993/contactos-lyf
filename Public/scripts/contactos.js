@@ -408,11 +408,27 @@ async function manejarImportacion(e) {
     if (!id && telefono && existentes[`T_${telefono}`])
       id = existentes[`T_${telefono}`];
 
+const nombreCompleto = (r["Nombre Completo"] || "").trim();
+
+    // separa 
+    let apellido = "";
+    let nombre = "";
+
+    if (nombreCompleto.includes(" ")) {
+      const partes = nombreCompleto.split(" ");
+      apellido = partes.shift();
+      nombre = partes.join(" ");
+    } else {
+      apellido = nombreCompleto;
+    }
+
     const payload = {
-      nombreCompleto: r["Nombre Completo"],
-      grupoFamiliarId: r["Grupo Familiar"],
-      telefono,
-      afiliado,
+      nombre,
+      apellido,
+      nombreCompleto,
+      grupoFamiliarId: r["Grupo Familiar"] || null,
+      telefono: telefono ? String(telefono) : null,
+      afiliado: afiliado ? String(afiliado) : null,
       updatedAt: serverTimestamp()
     };
 
