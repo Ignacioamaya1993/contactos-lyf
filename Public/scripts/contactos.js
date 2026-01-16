@@ -324,10 +324,72 @@ if (form) {
   });
 }
 
-/* =====================
-   PAGINACIÓN
-===================== */
-document.getElementById("btnCargarMas")
-  ?.addEventListener("click", () => {
-    cargarContactos(false);
-  });
+//exportar csv
+function exportarCSV() {
+  if (contactosCache.length === 0) {
+    Swal.fire("Sin datos", "No hay contactos para exportar", "info");
+    return;
+  }
+
+  const headers = [
+    "Nombre Completo",
+    "Fecha Nacimiento",
+    "Edad",
+    "Grupo Familiar",
+    "Teléfono",
+    "Afiliado"
+  ];
+
+  const rows = contactosCache.map(c => [
+    c.nombreCompleto || "",
+    c.fechaNacimiento ? formatearFecha(c.fechaNacimiento) : "",
+    calcularEdad(c.fechaNacimiento),
+    c.grupoFamiliarId || "",
+    c.telefono || "",
+    c.afiliado || ""
+  ]);
+
+  let csvContent =
+    headers.join(";") + "\n" +
+    rows.map(r => r.join(";")).join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "contactos.csv";
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+//exportar excel
+function exportarExcel() {
+  if (contactosCache.length === 0) {
+    Swal.fire("Sin datos", "No hay contactos para exportar", "info");
+    return;
+  }
+
+  const data = contactosCache.map(c => ({
+    "Nombre Completo": c.nombreCompleto || "",
+    "Fecha Nacimiento": c.fechaNacimiento ? formatearFecha(c.fechaNacimiento) : "",
+    "Edad": calcularEdad(c.fechaNacimiento),
+    "Grupo Familiar": c.grupoFamiliarId || "",
+    "Teléfono": c.telefono || "",
+    "Afiliado": c.afiliado || ""
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Contactos");
+
+  XLSX.writeFile(workbook, "contactos.xlsx");
+}
+
+document.getElementById("btnExportCSV")
+  ?.addEventListener("click", exportarCSV);
+
+document.getElementById("btnExportExcel")
+  ?.addEventListener("click", exportarExcel);
