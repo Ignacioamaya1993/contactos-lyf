@@ -14,7 +14,8 @@ import {
   limit,
   startAfter,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* =====================
@@ -151,7 +152,6 @@ function renderTabla() {
       <td>${c.grupoFamiliarId || "-"}</td>
       <td>${c.telefono || "-"}</td>
       <td>${c.afiliado || "-"}</td>
-
       <td>
         <button data-edit="${c.id}">✏️</button>
         <button data-delete="${c.id}">🗑️</button>
@@ -225,12 +225,10 @@ export async function guardarContacto(data) {
     if (editandoId) {
       await updateDoc(doc(db, "contactos", editandoId), payload);
       editandoId = null;
-
       Swal.fire("Actualizado", "Contacto modificado correctamente", "success");
     } else {
       payload.createdAt = serverTimestamp();
       await addDoc(contactosRef, payload);
-
       Swal.fire("Guardado", "Contacto agregado correctamente", "success");
     }
 
@@ -272,7 +270,7 @@ async function cargarContactoParaEdicion(id) {
 async function eliminarContacto(id) {
   const result = await Swal.fire({
     title: "¿Eliminar contacto?",
-    text: "Esta acción es permanente y no se puede deshacer",
+    text: "Esta acción es permanente",
     icon: "warning",
     showCancelButton: true,
     confirmButtonText: "Sí, eliminar",
@@ -281,14 +279,9 @@ async function eliminarContacto(id) {
 
   if (!result.isConfirmed) return;
 
-  try {
-    await deleteDoc(doc(db, "contactos", id));
-    Swal.fire("Eliminado", "Contacto eliminado correctamente", "success");
-    cargarContactos(true);
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "No se pudo eliminar el contacto", "error");
-  }
+  await deleteDoc(doc(db, "contactos", id));
+  Swal.fire("Eliminado", "Contacto eliminado", "success");
+  cargarContactos(true);
 }
 
 /* =====================
@@ -298,43 +291,35 @@ function limpiarFormulario() {
   document.getElementById("contactoForm")?.reset();
 }
 
-const form = document.getElementById("contactoForm");
-
-if (form) {
-  form.addEventListener("submit", async e => {
+document.getElementById("contactoForm")
+  ?.addEventListener("submit", async e => {
     e.preventDefault();
 
-    const data = {
-      nombre: form.nombre.value.trim(),
-      apellido: form.apellido.value.trim(),
-      telefono: form.telefono.value.trim(),
-      afiliado: form.afiliado.value.trim(),
-      grupoFamiliarId: form.grupoFamiliarId.value.trim(),
-      fechaNacimiento: form.fechaNacimiento.value
-        ? new Date(form.fechaNacimiento.value)
+    const f = e.target;
+
+    await guardarContacto({
+      nombre: f.nombre.value.trim(),
+      apellido: f.apellido.value.trim(),
+      telefono: f.telefono.value.trim(),
+      afiliado: f.afiliado.value.trim(),
+      grupoFamiliarId: f.grupoFamiliarId.value.trim(),
+      fechaNacimiento: f.fechaNacimiento.value
+        ? new Date(f.fechaNacimiento.value)
         : null
-    };
-
-    if (!data.nombre || !data.apellido || !data.telefono) {
-      Swal.fire("Datos incompletos", "Nombre, apellido y teléfono son obligatorios", "warning");
-      return;
-    }
-
-    await guardarContacto(data);
+    });
   });
-}
 
-//exportar csv
+/* =====================
+   EXPORT CSV
+===================== */
 function exportarCSV() {
-  if (contactosCache.length === 0) {
-    Swal.fire("Sin datos", "No hay contactos para exportar", "info");
+  if (!contactosCache.length) {
+    Swal.fire("Sin datos", "No hay contactos", "info");
     return;
   }
 
   const headers = [
     "Nombre Completo",
-    "Fecha Nacimiento",
-    "Edad",
     "Grupo Familiar",
     "Teléfono",
     "Afiliado"
@@ -342,54 +327,110 @@ function exportarCSV() {
 
   const rows = contactosCache.map(c => [
     c.nombreCompleto || "",
-    c.fechaNacimiento ? formatearFecha(c.fechaNacimiento) : "",
-    calcularEdad(c.fechaNacimiento),
     c.grupoFamiliarId || "",
     c.telefono || "",
     c.afiliado || ""
   ]);
 
-  let csvContent =
+  const csv =
     headers.join(";") + "\n" +
     rows.map(r => r.join(";")).join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "contactos.csv";
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-//exportar excel
-function exportarExcel() {
-  if (contactosCache.length === 0) {
-    Swal.fire("Sin datos", "No hay contactos para exportar", "info");
-    return;
-  }
-
-  const data = contactosCache.map(c => ({
-    "Nombre Completo": c.nombreCompleto || "",
-    "Fecha Nacimiento": c.fechaNacimiento ? formatearFecha(c.fechaNacimiento) : "",
-    "Edad": calcularEdad(c.fechaNacimiento),
-    "Grupo Familiar": c.grupoFamiliarId || "",
-    "Teléfono": c.telefono || "",
-    "Afiliado": c.afiliado || ""
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Contactos");
-
-  XLSX.writeFile(workbook, "contactos.xlsx");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "contactos.csv";
+  a.click();
 }
 
 document.getElementById("btnExportCSV")
   ?.addEventListener("click", exportarCSV);
 
+/* =====================
+   EXPORT EXCEL
+===================== */
+function exportarExcel() {
+  if (!contactosCache.length) {
+    Swal.fire("Sin datos", "No hay contactos", "info");
+    return;
+  }
+
+  const data = contactosCache.map(c => ({
+    "Nombre Completo": c.nombreCompleto,
+    "Grupo Familiar": c.grupoFamiliarId,
+    "Teléfono": c.telefono,
+    "Afiliado": c.afiliado
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Contactos");
+  XLSX.writeFile(wb, "contactos.xlsx");
+}
+
 document.getElementById("btnExportExcel")
   ?.addEventListener("click", exportarExcel);
+
+/* =====================
+   IMPORT CSV / EXCEL
+===================== */
+document.getElementById("btnImport")
+  ?.addEventListener("click", () =>
+    document.getElementById("inputImport").click()
+  );
+
+document.getElementById("inputImport")
+  ?.addEventListener("change", manejarImportacion);
+
+async function manejarImportacion(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const buffer = await file.arrayBuffer();
+  const wb = XLSX.read(buffer, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  const snap = await getDocs(contactosRef);
+  const existentes = {};
+
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.afiliado) existentes[`A_${c.afiliado}`] = d.id;
+    if (c.telefono) existentes[`T_${c.telefono}`] = d.id;
+  });
+
+  const batch = writeBatch(db);
+  let count = 0;
+
+  rows.forEach(r => {
+    const afiliado = r["Afiliado"];
+    const telefono = r["Teléfono"];
+
+    let id = null;
+    if (afiliado && existentes[`A_${afiliado}`])
+      id = existentes[`A_${afiliado}`];
+    if (!id && telefono && existentes[`T_${telefono}`])
+      id = existentes[`T_${telefono}`];
+
+    const payload = {
+      nombreCompleto: r["Nombre Completo"],
+      grupoFamiliarId: r["Grupo Familiar"],
+      telefono,
+      afiliado,
+      updatedAt: serverTimestamp()
+    };
+
+    if (id) {
+      batch.update(doc(db, "contactos", id), payload);
+    } else {
+      payload.createdAt = serverTimestamp();
+      batch.set(doc(contactosRef), payload);
+    }
+    count++;
+  });
+
+  await batch.commit();
+  Swal.fire("Importado", `${count} contactos procesados`, "success");
+  cargarContactos(true);
+}
