@@ -130,7 +130,7 @@ function renderTabla() {
       c.nombreCompleto?.toLowerCase().includes(t) ||
       c.telefono?.toString().includes(t) ||
       c.afiliado?.toString().includes(t) ||
-      c.grupoFamiliarId?.toString().includes(t)
+      c.grupoFamiliarId?.toLowerCase().includes(t)
     );
   });
 
