@@ -149,6 +149,8 @@ function renderTabla() {
       <td>${calcularEdad(c.fechaNacimiento)}</td>
       <td>${c.grupoFamiliarId || "-"}</td>
       <td>${c.telefono || "-"}</td>
+      <td>${c.afiliado || "-"}</td>
+
       <td>
         <button data-edit="${c.id}">✏️</button>
         <button data-delete="${c.id}">🗑️</button>
@@ -206,7 +208,7 @@ export async function guardarContacto(data) {
   const payload = {
     nombre: data.nombre,
     apellido: data.apellido,
-    nombreCompleto: `${data.nombre} ${data.apellido}`,
+    nombreCompleto: `${data.apellido} ${data.nombre}`,
     telefono: data.telefono,
     afiliado: data.afiliado || null,
     grupoFamiliarId: data.grupoFamiliarId || null,
